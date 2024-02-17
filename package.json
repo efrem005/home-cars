@@ -1,9 +1,9 @@
 {
   "name": "home-cars",
-  "version": "1.0.4",
+  "version": "1.0.0",
   "main": "main.js",
   "author": "efrem_nn@mail.ru",
-  "description": "electron",
+  "description": "electron, cars, mqtt, node",
   "repository": "https://github.com/efrem005/home-cars",
   "publish": {
     "provider": "github",
@@ -15,12 +15,14 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "app:dir": "electron-builder --dir",
-    "app:dist": "electron-builder"
+    "app:dist": "electron-builder",
+    "publish": "electron-forge publish"
   },
   "build": {
     "appId": "com.coderjeet.autoupdate",
-    "productName": "Autoupdater app",
+    "productName": "Home Cars",
     "win": {
+      "icon": "./renderer/img/car.png",
       "target": "nsis"
     },
     "directories": {
@@ -35,6 +37,8 @@
     "@electron-forge/maker-squirrel": "^7.2.0",
     "@electron-forge/maker-zip": "^7.2.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
+    "@electron-forge/publisher-github": "^7.2.0",
+    "dotenv": "^16.4.4",
     "electron": "^28.2.3",
     "electron-builder": "^24.9.1",
     "nodemon": "^3.0.3"

@@ -1,11 +1,13 @@
 const {app, Menu, Notification, Tray, nativeImage} = require('electron')
 const path = require('path')
 const mqtt = require('mqtt')
-const global = require('global')
-const { autoUpdater, AppUpdater } = require('electron-updater')
+const {autoUpdater, AppUpdater} = require('electron-updater')
 
 let icon = nativeImage.createFromPath(path.join(__dirname, '/renderer/img/cars2.png'))
-let client = mqtt.connect(process.env.MQTT_URL, {clientId: `clientId_${Math.random().toString(16).slice(2)}`})
+let client = mqtt.connect('ws://5.189.193.132:8080/', {clientId: `clientId_${Math.random().toString(16).slice(2)}`})
+let store = {
+    volt: 0
+}
 autoUpdater.autoDownload = false
 autoUpdater.autoInstallOnAppQuit = true
 
@@ -22,7 +24,7 @@ const createMqtt = async (tray) => {
                 const onlineCar = payload.toString()
                 const online = onlineCar === '1'
                 if (online) {
-                    new Notification({title: 'Машинка', body: 'В сети'}).show()
+                    setTimeout(() => {new Notification({title: 'Машинка', body: `В сети, напряжение ${store.volt} в`}).show()}, 200)
                     tray.setImage(nativeImage.createFromPath(path.join(__dirname, '/renderer/img/cars1.png')))
                     break;
                 } else {
@@ -31,18 +33,54 @@ const createMqtt = async (tray) => {
                 }
                 break;
             case "cars/indications":
-                const volt = JSON.parse(payload.toString()).volt.volt
-                tray.setToolTip(`Напряжение: ${Number(volt).toFixed(2)} в`)
+                const voltRes = JSON.parse(payload.toString()).volt.volt
+                const volt = Number(voltRes).toFixed(2)
+                store.volt = volt
+                tray.setToolTip(`Напряжение: ${volt} в`)
                 break;
             default:
                 break;
         }
     })
+}
 
-    client.on('offline', (e) => {
-        console.log(e)
+const diagnosticBtn = () => {
+    if (store.volt < 3.30) {
+        new Notification({title: 'Машинка батарея', body: `низкое напряжение батарей ${store.volt} в`}).show()
+    }
+    if (store.volt > 4.20) {
+        new Notification({title: 'Машинка батарея', body: `Батарея заряжена напряжение батарей ${store.volt} в`}).show()
+    }
+}
+
+const updateApp = () => {
+    autoUpdater.checkForUpdates().then()
+
+    autoUpdater.on('update-not-available', () => {
+        new Notification({title: 'Машинка', body: `Нет доступных обновлений`}).show()
     })
 }
+
+const nextUpdateApp = () => {
+    autoUpdater.checkForUpdates().then()
+}
+
+autoUpdater.on('update-available', ({releaseName, version}) => {
+    autoUpdater.downloadUpdate().then()
+    new Notification({
+        title: 'Машинка',
+        body: `Есть обновления. Установленая версия ${app.getVersion()} Новая версия ${releaseName}`
+    }).show()
+})
+
+autoUpdater.on('update-downloaded', ({releaseName, version}) => {
+    new Notification({title: 'Машинка', body: `Обновления готовый к установки. Новая версия ${releaseName}`}).show()
+    autoUpdater.quitAndInstall()
+})
+
+autoUpdater.on('error', (info) => {
+    new Notification({title: 'Машинка', body: `${info}`}).show()
+})
 
 
 app.whenReady().then(() => {
@@ -50,34 +88,22 @@ app.whenReady().then(() => {
     let tray = new Tray(icon)
 
     const contextMenu = Menu.buildFromTemplate([
-        { role: 'quit'},
+        {
+            label: 'update',
+            click: () => updateApp()
+        },
+        {type: 'separator'},
+        {role: 'quit'},
     ])
 
     tray.setContextMenu(contextMenu)
 
     createMqtt(tray).then()
 
-    autoUpdater.checkForUpdates().then((data) => {
-        console.log(data)
-        new Notification({title: 'Машинка', body: `Checking for updates. Current version ${app.getVersion()}`}).show()
-    })
+    setTimeout(nextUpdateApp, 10000)
 
-    autoUpdater.on('update-available', () => {
-        autoUpdater.downloadUpdate().then(() => {
-            new Notification({title: 'Машинка', body: `Update available. Current version ${app.getVersion()}`}).show()
-        })
-    })
+    setInterval(nextUpdateApp, Number(60 * 1000))
 
-    autoUpdater.on('update-not-available', () => {
-        new Notification({title: 'Машинка', body: `No update available. Current version ${app.getVersion()}`}).show()
-    })
-
-    autoUpdater.on('update-downloaded', () => {
-        new Notification({title: 'Машинка', body: `Update downloaded. Current version ${app.getVersion()}`}).show()
-    })
-
-    autoUpdater.on('error', (info) => {
-        new Notification({title: 'Машинка', body: `${info}`}).show()
-    })
+    setInterval(diagnosticBtn, Number(5 * 1000))
 })
 
