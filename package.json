@@ -1,9 +1,14 @@
 {
   "name": "home-cars",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "main": "main.js",
   "author": "efrem_nn@mail.ru",
   "description": "electron",
+  "repository": "https://github.com/efrem005/home-cars",
+  "publish": {
+    "provider": "github",
+    "releaseType": "release"
+  },
   "scripts": {
     "dev": "nodemon --watch . --exec \"electron .\"",
     "start": "electron-forge start",
@@ -31,10 +36,10 @@
     "@electron-forge/maker-zip": "^7.2.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
     "electron": "^28.2.3",
+    "electron-builder": "^24.9.1",
     "nodemon": "^3.0.3"
   },
   "dependencies": {
-    "electron-builder": "^24.9.1",
     "electron-squirrel-startup": "^1.0.0",
     "electron-updater": "^6.1.7",
     "global": "^4.4.0",
